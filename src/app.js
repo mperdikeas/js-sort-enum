@@ -9,7 +9,6 @@
 import assert from 'assert';
 
 
-
 class Sort {
 
     constructor(name, sign) {
@@ -41,11 +40,17 @@ class SortHub {
         this.locked = false;
         this.sorters = new Map();
         this.encounteredSingleAtMostNonNone = false;
+        this.referencesUsed = null;
     }
-    add(getter, setter) {
-        if (this.locked)
-            throw new Error();
-
+    add(getter, setter, ref=null) {
+        assert(typeof getter === typeof (function(){}));
+        assert(typeof setter === typeof (function(){}));
+        assert((ref===null) || (typeof ref === typeof {}));
+        assert(!this.locked);
+        if (this.referencesUsed===null)
+            this.referencesUsed = !(ref===null);
+        assert( ((!this.referencesUsed && (ref===null)) || (this.referencesUsed && (ref!==null)))
+                , 'it is assumed that references are either *used* or *not used* in all add calls');
         const key = this.sorters.size+1;
         if (getter()!==Sort.NONE) {
             if (this.encounteredSingleAtMostNonNone)
@@ -54,10 +59,11 @@ class SortHub {
                 this.encounteredSingleAtMostNonNone = true;
             }
         }
-        this.sorters.set(key, {getter: getter, setter: setter});
+        this.sorters.set(key, {getter: getter, setter: setter, ref: ref});
         return ()=>{this.notify(key);};
     }
     notify(key) {
+        assert(this.locked);
         if (key===null)
             throw new Error();
         if (!this.sorters.has(key))
@@ -65,7 +71,23 @@ class SortHub {
         if (this.sorters.get(key).getter()!==Sort.NONE)
             this.clearAllBut(key);
     }
+    returnSingleNonNoneRef() {
+        assert(this.locked);
+        assert(this.referencesUsed===true, `references where not used while adding sorters, you can't ask for one now`);
+        const singleAtMostNonNull = (function() {
+            let candidateRV = null;
+            for (let v of this.sorters.values()) {
+                if (v.getter()!==Sort.NONE) {
+                    assert(candidateRV===null, 'more than one non-NONE sorters found');
+                    candidateRV = v.ref;
+                }
+            }
+            return candidateRV;
+        }.bind(this))();
+        return singleAtMostNonNull;
+    }
     clearAllBut(_key) {
+        assert(this.locked);
         let nonNoneEncountered = false;
         for (let [key, value] of this.sorters) {
             if (key===_key)
@@ -80,6 +102,8 @@ class SortHub {
         }
     }
     lock() {
+        assert(!this.locked, 'while not strictly a mistake to lock twice, it may point to a bug in your code');
+        assert(this.referencesUsed!=null, 'hub locked without adding a single sorter; why would you want to do that?');
         this.locked = true;
         delete this.encounteredSingleAtMostNonNone; // shouldn't be used after this point
     }

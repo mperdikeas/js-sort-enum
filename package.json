@@ -1,11 +1,10 @@
 {
   "name": "sort-enum",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Utility class for sort enumeration and miscellaneous sorting-related semantics.",
   "main": "lib/index.js",
   "scripts": {
     "build": "babel src --out-dir lib --source-maps",
-    "start": "node lib/index.js",
     "test": "mocha --compilers js:babel-core/register"
   },
   "repository": {

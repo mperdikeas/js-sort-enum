@@ -1,3 +1,11 @@
+'use strict';
+
+(function() {
+    const sourceMapSupport = require('source-map-support');
+    sourceMapSupport.install();
+})();
+
+
 import 'babel-polyfill';
 import {Sort, SortHub} from '../lib/app.js';
 const assert     = require('assert');
@@ -34,8 +42,8 @@ describe('SortHub', function () {
            const hub = new SortHub();
            const notify = hub.add( getter, setter );
            assert.equal(typeof notify, 'function');
-           notify();
            hub.lock();
+           notify();
        });
 
     it('should not allow more than one non-NONE'
@@ -43,6 +51,7 @@ describe('SortHub', function () {
            a.v = Sort.ASC;
            const hub = new SortHub();
            const notify = hub.add( getter, setter );
+           hub.lock();
            assert.throws( ()=>{hub.add( getter, setter );} );
        });
 
@@ -130,6 +139,85 @@ describe('SortHub', function () {
            assert.equal(sorterB.v, Sort.ASC);
            assert.equal(sorterC.v, Sort.NONE);
 
+       });
+    describe('expected failures in strange and unnatural situations', function() {
+        it('should baulk on empty lock'
+       , function () {
+           const hub = new SortHub();
+           assert.throws( ()=>{hub.lock();});
+           }
+          );
+        it('should check arguments of add (i)', function () {
+            const hub = new SortHub();
+            assert.throws ( ()=>{hub.add(1,()=>{}, {});});
+        });
+        it('should check arguments of add (ii)', function () {
+            const hub = new SortHub();
+            assert.throws( ()=>{hub.add(()=>{},2, {});});
+        });
+        it('should check arguments of add (iii)', function () {
+            const hub = new SortHub();
+            assert.throws( ()=>{hub.add(()=>{},()=>{}, ()=>{});});
+        });
+        it('should check arguments of add (iv)', function () {
+            const hub = new SortHub();
+            assert.throws( ()=>{hub.add(()=>{},()=>{}, 3);});
+        });
+        it('should allow a consistent ref usage pattern', function() {
+            const hub = new SortHub();
+            hub.add( ()=>Sort.NONE,()=>{}, {});
+            hub.add( ()=>Sort.ASC,()=>{}, {});
+            assert.throws( ()=> {hub.add( ()=>Sort.NONE,()=>{}); } );
+        });
+    });
+    it('returnSingleNonNoneRef works'
+       , function() {
+           const sorterA = {v: Sort.NONE};
+           const sorterAGet = function() {return sorterA.v;};
+           const sorterASet = function(v) {sorterA.v = v;};
+
+           const sorterB = {v: Sort.DESC};
+           const sorterBGet = function() {return sorterB.v;};
+           const sorterBSet = function(v) {sorterB.v = v;};
+
+           const sorterC = {v: Sort.NONE};
+           const sorterCGet = function() {return sorterC.v;};
+           const sorterCSet = function(v) {sorterC.v = v;};
+           
+           const hub = new SortHub();
+           const notifierA = hub.add(sorterAGet, sorterASet, sorterA);
+           const notifierB = hub.add(sorterBGet, sorterBSet, sorterB);
+           const notifierC = hub.add(sorterCGet, sorterCSet, sorterC);
+           hub.lock();
+  
+           assert(hub.returnSingleNonNoneRef()===sorterB);           
+
+           notifierA();
+           assert(hub.returnSingleNonNoneRef()===sorterB);
+           assert.equal(sorterA.v, Sort.NONE);
+           assert.equal(sorterB.v, Sort.DESC);
+           assert.equal(sorterC.v, Sort.NONE);
+
+
+           sorterB.v = sorterB.v.next();
+           assert(hub.returnSingleNonNoneRef()===null);
+           notifierB();
+           assert(hub.returnSingleNonNoneRef()===null);
+           assert.equal(sorterA.v, Sort.NONE);
+           assert.equal(sorterB.v, Sort.NONE);
+           assert.equal(sorterC.v, Sort.NONE);
+
+           sorterC.v = sorterC.v.next();
+           assert(hub.returnSingleNonNoneRef()===sorterC);
+           notifierC();
+           assert(hub.returnSingleNonNoneRef()===sorterC);           
+           sorterB.v = sorterB.v.next();
+           assert.throws( ()=>{hub.returnSingleNonNoneRef();} ); // notifier hasn't been called yet
+           notifierB();
+           assert(hub.returnSingleNonNoneRef()===sorterB);                      
+           assert.equal(sorterA.v, Sort.NONE);
+           assert.equal(sorterB.v, Sort.ASC);
+           assert.equal(sorterC.v, Sort.NONE);
        });    
     
 });

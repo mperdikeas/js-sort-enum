@@ -31,3 +31,4 @@ let b = new SortHub();
 * 0.1.1 fixed typo in package.json
 * 0.1.2 conditionally requiring the babel-polyfill
 * 0.1.3 removed eval dependency
+* 0.1.4 added returnSingleNonNoneRef on SortHub
