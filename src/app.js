@@ -7,7 +7,7 @@
 })();
 
 import assert from 'assert';
-import _eval from 'eval';
+
 
 
 class Sort {
