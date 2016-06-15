@@ -28,4 +28,5 @@ let b = new SortHub();
 ## Release History
 
 * 0.1.0 Initial release
-* 0.1.0 fixed typo in package.json
+* 0.1.1 fixed typo in package.json
+* 0.1.2 conditionally requiring the babel-polyfill
