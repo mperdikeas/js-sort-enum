@@ -36,8 +36,10 @@ Sort.ASC  = new Sort('ASC' , '\u25b2');
 Sort.DESC = new Sort('DESC', '\u25bc');
 
 class SortHub {
-    constructor() {
-        this.locked = false;
+    constructor(requiresLocking = true) {
+        this.requiresLocking = requiresLocking;
+        if (this.requiresLocking)
+            this.locked = false;
         this.sorters = new Map();
         this.encounteredSingleAtMostNonNone = false;
         this.referencesUsed = null;
@@ -46,7 +48,7 @@ class SortHub {
         assert(typeof getter === typeof (function(){}));
         assert(typeof setter === typeof (function(){}));
         assert((ref===null) || (typeof ref === typeof {}));
-        assert(!this.locked);
+        assert( (!this.requiresLocking) || (!this.locked), 'trying to add observer while hub is locked');
         if (this.referencesUsed===null)
             this.referencesUsed = !(ref===null);
         assert( ((!this.referencesUsed && (ref===null)) || (this.referencesUsed && (ref!==null)))
@@ -63,7 +65,7 @@ class SortHub {
         return ()=>{this.notify(key);};
     }
     notify(key) {
-        assert(this.locked);
+        assert((!this.requiresLocking) || this.locked, 'notify called when hub is not locked');
         if (key===null)
             throw new Error();
         if (!this.sorters.has(key))
@@ -72,7 +74,7 @@ class SortHub {
             this.clearAllBut(key);
     }
     returnSingleNonNoneRef() {
-        assert(this.locked);
+        assert((!this.requiresLocking) || this.locked, 'returnSingleNonNoneRef called when hub is not locked');
         assert(this.referencesUsed===true, `references where not used while adding sorters, you can't ask for one now`);
         const singleAtMostNonNull = (function() {
             let candidateRV = null;
@@ -87,7 +89,7 @@ class SortHub {
         return singleAtMostNonNull;
     }
     clearAllBut(_key) {
-        assert(this.locked);
+        assert((!this.requiresLocking) || this.locked, 'clearAllBut called when hub is not locked');
         let nonNoneEncountered = false;
         for (let [key, value] of this.sorters) {
             if (key===_key)
@@ -102,6 +104,7 @@ class SortHub {
         }
     }
     lock() {
+        assert(this.requiresLocking, 'lock called on hub that does not require locking (not necessarily wrong, but weird');
         assert(!this.locked, 'while not strictly a mistake to lock twice, it may point to a bug in your code');
         assert(this.referencesUsed!=null, 'hub locked without adding a single sorter; why would you want to do that?');
         this.locked = true;

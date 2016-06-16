@@ -218,7 +218,18 @@ describe('SortHub', function () {
            assert.equal(sorterA.v, Sort.NONE);
            assert.equal(sorterB.v, Sort.ASC);
            assert.equal(sorterC.v, Sort.NONE);
-       });    
+       });
+    it('optional locking works', function() {
+        const hub = new SortHub(false);
+        const sh = new SortHolder(hub, Sort.ASC);
+        assert(hub.returnSingleNonNoneRef()===sh);
+        sh.next();
+        assert(sh.v===Sort.DESC);
+        sh.next();
+        assert(sh.v===Sort.NONE);
+        assert(hub.returnSingleNonNoneRef()===null);
+        assert.throws(()=>{hub.lock();});
+    });
 });
 
 describe('SortHolder', function() {

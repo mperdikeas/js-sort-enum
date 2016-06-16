@@ -79,3 +79,4 @@ assert(null===hub.returnSingleNonNoneRef());
 * 0.1.5 added returnSingleNonNoneRef on SortHub
 * 0.1.6 cosmetics in the README.md
 * 0.1.7 SortHolder utility class added
+* 0.1.8 support for optional locking
