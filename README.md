@@ -13,7 +13,7 @@ No actual sorting algorithms implemented.
 # Usage
 
 ````javascript
-import {Sort, SortHub} from 'sort-enum';
+import {Sort, SortHolder, SortHub} from 'sort-enum';
 ````
 ## simple enum usage without hub
 ````javascript
@@ -40,7 +40,7 @@ is sorted to automatically disable sorting on the others.
 It also allows you to ask the hub to return the 'column'
 that's currently enabled for sorting.
 
-`SortHolder` is a utility class that under the hoods uses
+`SortHolder` is a utility class that under the hood uses
 the more flexible `SortHub.add` method that accepts
 simple getter and setter functions (see `test.js`
 for examples of that).
@@ -49,7 +49,7 @@ for examples of that).
 const hub = new SortHub();
 const s1 = new SortHolder(hub, Sort.ASC);
 const s2 = new SortHolder(hub);
-hub.lock();
+hub.lock(); // create the hub with new SortHub(false) if you don't want to bother with locking
 assert(s1===hub.returnSingleNonNoneRef());
 s2.next();
 assert.equal(s1.v, Sort.NONE);
@@ -77,6 +77,7 @@ assert(null===hub.returnSingleNonNoneRef());
 * 0.1.3 removed eval dependency
 * 0.1.4 added returnSingleNonNoneRef on SortHub
 * 0.1.5 added returnSingleNonNoneRef on SortHub
-* 0.1.6 cosmetics in the README.md
+* 0.1.6 cosmetics in README.md
 * 0.1.7 SortHolder utility class added
 * 0.1.8 support for optional locking
+* 0.1.9 cosmetics in README.md
