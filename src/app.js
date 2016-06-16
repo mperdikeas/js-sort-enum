@@ -111,7 +111,27 @@ class SortHub {
 }
 
 
+class SortHolder {
+    constructor(sortHub=null, initialValue=Sort.NONE) {
+        this.v = initialValue;
+        if (sortHub!==null) {
+            this.notify = 
+                sortHub.add(function() {return this.v;}.bind(this),
+                            function(v) {this.v = v;}.bind(this),
+                            this);
+        }
+    }
+    next() {
+        this.v = this.v.next();
+        if (this.notify != null)
+            this.notify();
+    }
+
+
+}
+
 module.exports = {
     Sort: Sort,
-    SortHub: SortHub
+    SortHub: SortHub,
+    SortHolder: SortHolder
 };

@@ -7,7 +7,7 @@
 
 
 import 'babel-polyfill';
-import {Sort, SortHub} from '../lib/app.js';
+import {Sort, SortHub, SortHolder} from '../lib/app.js';
 const assert     = require('assert');
 
 describe('Sort', function () {
@@ -219,6 +219,52 @@ describe('SortHub', function () {
            assert.equal(sorterB.v, Sort.ASC);
            assert.equal(sorterC.v, Sort.NONE);
        });    
+});
+
+describe('SortHolder', function() {
+    it('should not break in trivial (no-hub) case'
+       , function () {
+           {
+               const s1 = new SortHolder();
+               assert(s1.v===Sort.NONE);
+               s1.next();
+               assert(s1.v===Sort.ASC);
+               s1.next();
+               assert(s1.v===Sort.DESC);
+           }
+           {
+               const s2 = new SortHolder(null, Sort.ASC);
+               assert(s2.v===Sort.ASC);
+           }
+       });
+    it('should coordinate nicely with a hub'
+       , function () {
+           const hub = new SortHub();
+           const s1 = new SortHolder(hub, Sort.ASC);
+           const s2 = new SortHolder(hub);
+           hub.lock();
+           assert(s1===hub.returnSingleNonNoneRef());
+           s2.next();
+           assert.equal(s1.v, Sort.NONE);
+           assert.equal(s2.v, Sort.ASC);
+           assert(s2===hub.returnSingleNonNoneRef());
+           s2.next();
+           assert.equal(s1.v, Sort.NONE);
+           assert.equal(s2.v, Sort.DESC);
+           assert(s2===hub.returnSingleNonNoneRef());
+           s2.next();
+           assert.equal(s1.v, Sort.NONE);
+           assert.equal(s2.v, Sort.NONE);
+           assert(null===hub.returnSingleNonNoneRef());
+       });
+    it('should baulk when a new holder is added after the hub is locked'
+       , function() {
+           const hub = new SortHub();
+           const s1 = new SortHolder(hub, Sort.ASC);
+           const s2 = new SortHolder(hub);
+           hub.lock();
+           assert.throws( ()=>{new SortHolder(hub);});               
+       });
     
 });
 
