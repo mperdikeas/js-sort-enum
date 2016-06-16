@@ -1,6 +1,6 @@
 {
   "name": "sort-enum",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Utility class for sort enumeration and miscellaneous sorting-related semantics.",
   "main": "lib/index.js",
   "scripts": {
